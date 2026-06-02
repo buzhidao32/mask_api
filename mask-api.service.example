@@ -1,0 +1,16 @@
+[Unit]
+Description=Mask API
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mask-api
+ExecStart=/usr/bin/python3 /opt/mask-api/server.py
+Restart=always
+RestartSec=3
+Environment=MASK_API_HOST=127.0.0.1
+Environment=MASK_API_PORT=8080
+Environment=MASK_PUBLIC_BASE_URL=http://your-domain.example
+
+[Install]
+WantedBy=multi-user.target
