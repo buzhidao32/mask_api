@@ -7,6 +7,7 @@ import os
 import posixpath
 import random
 from datetime import datetime
+from email.message import Message
 from functools import lru_cache
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
