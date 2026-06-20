@@ -45,7 +45,8 @@ http://0.0.0.0:8080
 - `GET /api/masks/random`
 - `GET /api/masks/today?qq=123456`
 - `GET /api/masks/{id}`
-- `GET /api/score?name=面具嫦娥` — 查询面具或称号分数
+- `GET /api/score?name=面具嫦娥` — 查询面具或称号分数（返回JSON）
+- `GET /api/score/text?name=面具嫦娥` — 查询面具或称号分数（返回纯文本）
 - `GET /images/{image_path}`
 - `GET /card/random.png`
 - `GET /card/today.png?qq=123456`

@@ -502,6 +502,8 @@ class MaskApiHandler(BaseHTTPRequestHandler):
                 return self.handle_today(query)
             if path == "/api/score":
                 return self.handle_score(query)
+            if path == "/api/score/text":
+                return self.handle_score_text(query)
             if path in ("/card/random.png", "/api/card/random.png"):
                 return self.handle_card(random.choice(self.masks))
             if path in ("/card/today.png", "/api/card/today.png"):
@@ -574,6 +576,38 @@ class MaskApiHandler(BaseHTTPRequestHandler):
             return self.send_json({"ok": True, "query": name, "results": [], "message": f"未找到：{name}"})
 
         return self.send_json({"ok": True, "query": name, "results": results})
+
+    def handle_score_text(self, query):
+        name = (query.get("name") or [""])[0].strip()
+        if not name:
+            return self.send_text_response("请输入：面具xxx 或 称号xxx")
+
+        results = query_score(name, self.score_masks, self.score_achievements)
+        if not results:
+            return self.send_text_response(f"未找到：{name}")
+
+        lines = []
+        for r in results:
+            if r["type"] == "mask":
+                lines.append(f"面具【{r['name']}】分数：{r['point']}")
+                if r.get("achievement"):
+                    lines.append(f"对应称号：{r['achievement']}")
+            elif r["type"] == "achievement":
+                lines.append(f"称号【{r['name']}】分数：{r['point']}")
+                if r.get("demandNames"):
+                    lines.append(f"需要面具：{'、'.join(r['demandNames'])}")
+
+        return self.send_text_response("\n".join(lines))
+
+    def send_text_response(self, text):
+        body = text.encode("utf-8")
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
 
     def handle_card_today(self, query):
         qq = (query.get("qq") or query.get("user") or ["default"])[0].strip() or "default"
