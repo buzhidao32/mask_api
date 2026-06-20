@@ -416,7 +416,36 @@ def render_card(mask):
 
 
 class MaskApiHandler(BaseHTTPRequestHandler):
-    server_version = "MaskApi/1.1"
+    server_version = "MaskApi/1.2"
+
+    def parse_request(self):
+        """重写parse_request以支持UTF-8 URL"""
+        try:
+            raw_line = self.rfile.readline(65537)
+            if len(raw_line) > 65536:
+                self.requestline = ''
+                self.request_version = ''
+                self.command = ''
+                self.send_error(414)
+                return False
+            # 用UTF-8解码请求行
+            try:
+                self.requestline = raw_line.decode('utf-8').strip()
+            except UnicodeDecodeError:
+                self.requestline = raw_line.decode('latin-1').strip()
+            words = self.requestline.split()
+            if len(words) == 3:
+                self.command, self.path, self.request_version = words
+            elif len(words) == 2:
+                self.command, self.path = words
+                self.request_version = 'HTTP/0.9'
+            else:
+                return False
+            # 继续解析headers
+            self.parse_headers()
+            return True
+        except Exception:
+            return False
 
     def log_message(self, fmt, *args):
         if os.environ.get("MASK_API_ACCESS_LOG", "0") == "1":
