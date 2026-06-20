@@ -29,6 +29,7 @@ except ImportError:
 
 ROOT = Path(__file__).resolve().parent
 DATA_FILE = ROOT / "masks.json"
+SCORE_DATA_FILE = ROOT / "mask_scores.json"
 ATTR_UI_DIR = ROOT / "AttrUI"
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 8080
@@ -104,6 +105,79 @@ def load_masks():
             raise RuntimeError(f"Missing image for {mask['id']}: {mask['image']}")
 
     return masks
+
+
+def load_score_data():
+    """加载面具分数数据，返回 (masks_dict, achievements_dict)"""
+    if not SCORE_DATA_FILE.is_file():
+        return {}, {}
+
+    raw_json = SCORE_DATA_FILE.read_text(encoding="utf-8").strip()
+    data = json.loads(raw_json)
+
+    # 构建面具名字到面具数据的索引（支持 allNames）
+    masks_dict = {}
+    for mask in data.get("masks", []):
+        for name in mask.get("allNames", []):
+            masks_dict[name] = mask
+
+    # 构建称号名字到称号数据的索引
+    achievements_dict = {}
+    for ach in data.get("achievements", []):
+        achievements_dict[ach["achievement"]] = ach
+
+    return masks_dict, achievements_dict
+
+
+def query_score(query, masks_dict, achievements_dict):
+    """查询面具或称号分数，返回结果列表"""
+    results = []
+
+    # 解析查询类型
+    query = query.strip()
+    if not query:
+        return results
+
+    search_type = None
+    search_name = query
+
+    if query.startswith("面具"):
+        search_type = "mask"
+        search_name = query[2:].strip()
+    elif query.startswith("称号"):
+        search_type = "achievement"
+        search_name = query[2:].strip()
+
+    if not search_name:
+        return results
+
+    # 搜索面具
+    if search_type in (None, "mask"):
+        mask = masks_dict.get(search_name)
+        if mask:
+            direct_point = mask.get("directPoint", 0)
+            achievement_name = ""
+            if mask.get("directAchievement"):
+                achievement_name = mask["directAchievement"].get("achievement", "")
+            results.append({
+                "type": "mask",
+                "name": mask["maskName"],
+                "point": direct_point,
+                "achievement": achievement_name,
+            })
+
+    # 搜索称号
+    if search_type in (None, "achievement"):
+        ach = achievements_dict.get(search_name)
+        if ach:
+            results.append({
+                "type": "achievement",
+                "name": ach["achievement"],
+                "point": ach.get("point", 0),
+                "demandNames": ach.get("demandNames", []),
+            })
+
+    return results
 
 
 def safe_image_path(relative_path):
@@ -360,6 +434,14 @@ class MaskApiHandler(BaseHTTPRequestHandler):
     def public_base_url(self):
         return self.server.public_base_url
 
+    @property
+    def score_masks(self):
+        return self.server.score_masks
+
+    @property
+    def score_achievements(self):
+        return self.server.score_achievements
+
     def send_json(self, payload, status=HTTPStatus.OK):
         body = json_bytes(payload)
         self.send_response(status)
@@ -418,6 +500,8 @@ class MaskApiHandler(BaseHTTPRequestHandler):
                 return self.send_json({"ok": True, "data": self.with_url(random.choice(self.masks))})
             if path == "/api/masks/today":
                 return self.handle_today(query)
+            if path == "/api/score":
+                return self.handle_score(query)
             if path in ("/card/random.png", "/api/card/random.png"):
                 return self.handle_card(random.choice(self.masks))
             if path in ("/card/today.png", "/api/card/today.png"):
@@ -450,6 +534,7 @@ class MaskApiHandler(BaseHTTPRequestHandler):
                     "/api/masks/random",
                     "/api/masks/today?qq=123456",
                     "/api/masks/{id}",
+                    "/api/score?name=面具嫦娥",
                     "/images/{relative_png_path}",
                     "/card/random.png",
                     "/card/today.png?qq=123456",
@@ -475,6 +560,20 @@ class MaskApiHandler(BaseHTTPRequestHandler):
         if not mask:
             return self.send_error_json(HTTPStatus.NOT_FOUND, f"Unknown mask id: {mask_id}")
         return self.send_json({"ok": True, "data": self.with_url(mask)})
+
+    def handle_score(self, query):
+        name = (query.get("name") or [""])[0].strip()
+        if not name:
+            return self.send_error_json(
+                HTTPStatus.BAD_REQUEST,
+                "Missing name query, example: /api/score?name=面具嫦娥 or /api/score?name=称号广寒上仙"
+            )
+
+        results = query_score(name, self.score_masks, self.score_achievements)
+        if not results:
+            return self.send_json({"ok": True, "query": name, "results": [], "message": f"未找到：{name}"})
+
+        return self.send_json({"ok": True, "query": name, "results": results})
 
     def handle_card_today(self, query):
         qq = (query.get("qq") or query.get("user") or ["default"])[0].strip() or "default"
@@ -539,13 +638,18 @@ def main():
     public_base_url = os.environ.get("MASK_PUBLIC_BASE_URL", DEFAULT_PUBLIC_BASE_URL).rstrip("/")
 
     masks = load_masks()
+    score_masks, score_achievements = load_score_data()
+
     server = ThreadingHTTPServer((host, port), MaskApiHandler)
     server.masks = masks
     server.masks_by_id = {mask["id"]: mask for mask in masks}
     server.public_base_url = public_base_url
+    server.score_masks = score_masks
+    server.score_achievements = score_achievements
 
     print(f"mask-api listening on http://{host}:{port}")
     print(f"loaded masks: {len(masks)}")
+    print(f"loaded score masks: {len(score_masks)}, achievements: {len(score_achievements)}")
     print(f"public base url: {public_base_url}")
     server.serve_forever()
 

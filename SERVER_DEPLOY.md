@@ -6,11 +6,12 @@
 
 - `server.py`
 - `masks.json`
+- `mask_scores.json`
 - `AttrUI/`
 - `fonts/`
 - `requirements.txt`
 
-接口读取 `masks.json`，图片从 `AttrUI` 读取，卡片字体优先使用 `fonts/` 里的开源字体。`今日面具.txt` 只负责在 Sec 里发送服务器合成好的图片，不是 API 运行必需文件。
+接口读取 `masks.json`，图片从 `AttrUI` 读取，卡片字体优先使用 `fonts/` 里的开源字体。`mask_scores.json` 用于查询面具/称号分数。`今日面具.txt` 只负责在 Sec 里发送服务器合成好的图片，不是 API 运行必需文件。
 
 ## 服务器部署
 
@@ -71,6 +72,7 @@ sudo ufw allow 80/tcp
 ```powershell
 scp "D:\Desktop\fzjh_backup\Special_Package\mask-api\server.py" root@your-server:/opt/mask-api/
 scp "D:\Desktop\fzjh_backup\Special_Package\mask-api\masks.json" root@your-server:/opt/mask-api/
+scp "D:\Desktop\fzjh_backup\Special_Package\mask-api\mask_scores.json" root@your-server:/opt/mask-api/
 scp "D:\Desktop\fzjh_backup\Special_Package\mask-api\今日面具.txt" root@your-server:/opt/mask-api/
 scp "D:\Desktop\fzjh_backup\Special_Package\mask-api\requirements.txt" root@your-server:/opt/mask-api/
 scp -r "D:\Desktop\fzjh_backup\Special_Package\mask-api\fonts" root@your-server:/opt/mask-api/

@@ -1,11 +1,12 @@
 # 今日面具 API
 
-一个零框架 Python HTTP API，用固定日期和 QQ 号为用户生成“今日面具”，并支持返回面具数据、原始图片和服务器合成卡片图。
+一个零框架 Python HTTP API，用固定日期和 QQ 号为用户生成”今日面具”，并支持返回面具数据、原始图片和服务器合成卡片图。
 
 ## 项目结构
 
 - `server.py`：API 服务入口。
 - `masks.json`：面具数据。
+- `mask_scores.json`：面具分数数据（从 mask-score 项目同步）。
 - `AttrUI/`：`masks.json` 当前引用的面具图片。
 - `fonts/`：合成卡片优先使用的中文字体。
 - `今日面具.txt`：Secluded/Sec 词库文件，仅用于机器人发送服务器合成图。
@@ -44,12 +45,33 @@ http://0.0.0.0:8080
 - `GET /api/masks/random`
 - `GET /api/masks/today?qq=123456`
 - `GET /api/masks/{id}`
+- `GET /api/score?name=面具嫦娥` — 查询面具或称号分数
 - `GET /images/{image_path}`
 - `GET /card/random.png`
 - `GET /card/today.png?qq=123456`
 - `GET /card/masks/{id}.png`
 
 `/api/masks/today` 和 `/card/today.png` 使用 Asia/Shanghai 日期；同一个 `qq` 在同一天固定返回同一个面具。
+
+### 分数查询接口
+
+`GET /api/score?name=面具嫦娥` 或 `GET /api/score?name=称号广寒上仙`
+
+返回示例：
+```json
+{
+  "ok": true,
+  "query": "面具嫦娥",
+  "results": [
+    {
+      "type": "mask",
+      "name": "嫦娥",
+      "point": 10,
+      "achievement": "广寒上仙"
+    }
+  ]
+}
+```
 
 ## 部署
 
