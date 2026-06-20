@@ -582,6 +582,9 @@ class MaskApiHandler(BaseHTTPRequestHandler):
         if not name:
             return self.send_text_response("请输入：面具xxx 或 称号xxx")
 
+        # 确保中文正确解码
+        name = unquote(name)
+
         results = query_score(name, self.score_masks, self.score_achievements)
         if not results:
             return self.send_text_response(f"未找到：{name}")
