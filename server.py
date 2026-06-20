@@ -34,7 +34,7 @@ SCORE_DATA_FILE = ROOT / "mask_scores.json"
 ATTR_UI_DIR = ROOT / "AttrUI"
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 8080
-DEFAULT_PUBLIC_BASE_URL = "http://111.228.12.141:8080"
+DEFAULT_PUBLIC_BASE_URL = "http://localhost:8080"
 
 FONT_TITLE_CANDIDATES = (
     str(ROOT / "fonts" / "ZhiMangXing-Regular.ttf"),
