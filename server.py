@@ -598,7 +598,7 @@ class MaskApiHandler(BaseHTTPRequestHandler):
 
         results = query_score(name, self.score_masks, self.score_achievements)
         if not results:
-            return self.send_text_response(f"未找到：{name}")
+            return self.send_text_response("")
 
         lines = []
         for r in results:
